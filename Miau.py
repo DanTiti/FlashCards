@@ -11,6 +11,8 @@ from tkinter import filedialog
 import pygame
 import customtkinter
 from DataBase import DataBase
+from tkinter import colorchooser
+
 
 global Res
 global Acierto
@@ -19,6 +21,11 @@ Res = []
 Acierto = []
 archivo = ""
 idTabla = 0
+n = 0
+tColor1 = "#9792ca"
+tColor2 = "#14191d"
+tColor3 = "#485a69"
+Colores = ["#12CDD4", "#DA0063", "#652CB3", "#0CA789"]
 
 def Imagen(Direccion):
     imagen = Image.open(Direccion)
@@ -71,9 +78,9 @@ def DesactivarBotones():
     BtAtras.config(state="disabled")
 
 def DesactivarMenu():
-    Menu_Opciones.entryconfig(index="Memorizar", state="disabled")
-    Menu_Opciones.entryconfig(index="Lapsos", state="disabled")
-    Menu_Opciones.entryconfig(index="Preguntas rapidas", state="disabled")
+    Menu_Estudios.entryconfig(index="Memorizar", state="disabled")
+    Menu_Estudios.entryconfig(index="Lapsos", state="disabled")
+    Menu_Estudios.entryconfig(index="Preguntas rapidas", state="disabled")
 
 def DesactivasPrincipal():
     BtGuardar.config(state="disabled")
@@ -164,9 +171,9 @@ def BarajearCartas():
     return Datos
 
 def ActivarMenu():
-    Menu_Opciones.entryconfig(index="Memorizar", state="normal")
-    Menu_Opciones.entryconfig(index="Lapsos", state="normal")
-    Menu_Opciones.entryconfig(index="Preguntas rapidas", state="normal")
+    Menu_Estudios.entryconfig(index="Memorizar", state="normal")
+    Menu_Estudios.entryconfig(index="Lapsos", state="normal")
+    Menu_Estudios.entryconfig(index="Preguntas rapidas", state="normal")
 
 def GuardarCarta(idTabla):
     global archivo
@@ -418,6 +425,7 @@ def VentanaPrincipal():
     global EntradaRespuesta
     global EntradaComentarios
     global Menu_Opciones
+    global Menu_Estudios
     global lbImagen
     global FrameImagen
     global LbPrevisualizacion
@@ -433,18 +441,29 @@ def VentanaPrincipal():
     #----------------Menu------------------------------
 
     Barra_Menu = Menu()
+    Menu_Estudios = Menu(Barra_Menu, tearoff=False)
     Menu_Opciones = Menu(Barra_Menu, tearoff=False)
     Barra_Menu.add_cascade(menu=Menu_Opciones, label="Opciones")
-    Menu_Opciones.add_command(label="Memorizar", command=lambda:Barajear(), state="disabled")
-    Menu_Opciones.add_command(label="Lapsos", command=lambda:BarajearLapsos(), state="disabled")
-    Menu_Opciones.add_command(label="Preguntas rapidas", command=lambda:BarajearLapsosEnCero(), state="disabled")
-    Menu_Opciones.add_command(label="Charlar", command=lambda:Charlar(), state="disabled")
+    Barra_Menu.add_cascade(menu=Menu_Estudios, label="Estudiar")
+
+    #MENU OPCIONES
+    Menu_Opciones.add_command(label="Salir", command=lambda: (VentanaCarpetas(), Raiz.destroy()))
+
+
+    #MENU ESTUDIOS
+    Menu_Estudios.add_command(label="Memorizar", command=lambda:Barajear(), state="disabled", accelerator="Ctrl+N")
+    Menu_Estudios.add_separator()
+    Menu_Estudios.add_command(label="Lapsos", command=lambda:BarajearLapsos(), state="disabled")
+    Menu_Estudios.add_separator()
+    Menu_Estudios.add_command(label="Preguntas rapidas", command=lambda:BarajearLapsosEnCero(), state="disabled")
+    Menu_Estudios.add_separator()
+    Menu_Estudios.add_command(label="Charlar", command=lambda:Charlar(), state="disabled")
 
     #--------------Entrada del concepto---------------
     LbConcepto = Label(FramePrincipal, text="Concepto o pregunta")
     LbConcepto.grid(column=0, row=0, columnspan=3)
 
-    EntradaConcepto = customtkinter.CTkEntry(FramePrincipal, width=200)
+    EntradaConcepto = customtkinter.CTkEntry(FramePrincipal, width=200, placeholder_text="Introduce un concepto")
     EntradaConcepto.grid(column=0, row=1, columnspan=3, pady=10, ipady= 5)
 
     #--------------Entrada definicion o significado-----------
@@ -452,7 +471,7 @@ def VentanaPrincipal():
     LbRespuesta = Label(FramePrincipal, text="Respuesta")
     LbRespuesta.grid(column=0, row=2, columnspan=3)
 
-    EntradaRespuesta = customtkinter.CTkEntry(FramePrincipal, width=200)
+    EntradaRespuesta = customtkinter.CTkEntry(FramePrincipal, width=200, placeholder_text="Definicion del concepto")
     EntradaRespuesta.grid(column=0, row=3, columnspan=3, pady=10, ipady=5)
 
     #--------------Entrada de comentarios-------------------
@@ -504,28 +523,145 @@ def VentanaPrincipal():
 
     Raiz.mainloop()
 
-def ventanaCarpetas():
-    conexion = DataBase()
-    data = conexion.ObtenerCarpetas()
-    conexion.Cerrar()
+def VentanaCarpetas():
 
-    def CrearCarpeta(nombre):
+    def ActualizarUI():
+        global n
         conexion = DataBase()
-        conexion.CrearCarpeta(nombre)
+        data = conexion.ObtenerCarpetas()
+        conexion.Cerrar()
+        print(data)
+
+        if n == 0:
+            for carpeta in data:
+                carpeta_id, carpeta_nombre, carpeta_color, carpeta_marcador = carpeta
+                frameContenedor = customtkinter.CTkFrame(SegundoFrame, bg_color="white", fg_color=carpeta_color, border_width=2, border_color="black")
+                frameContenedor.pack(fill="x", pady=5, padx=60)
+                frameContenedor.columnconfigure(0, weight=1)
+                frameContenedor.columnconfigure(1, weight=1)
+
+                labelImage = customtkinter.CTkFrame(frameContenedor, width=100, height=100, bg_color=carpeta_color, fg_color=carpeta_marcador, corner_radius=5, border_color="black", border_width=2)
+                labelImage.grid(column=0, row=0, sticky="w", padx= (15, 0))
+
+                labelName = Label(
+                    frameContenedor, 
+                    text=carpeta_nombre, 
+                    bg=carpeta_color, 
+                    fg="white", 
+                    font=("Arial", 12, "bold")
+                )
+                labelName.grid(column=1, row=0, pady=50, sticky="w")
+
+                frameContenedor.bind("<Button-1>", lambda e, cid=carpeta_id, cname=carpeta_nombre: on_carpeta_click(cid, cname))
+                labelName.bind("<Button-1>", lambda e, cid=carpeta_id, cname=carpeta_nombre: on_carpeta_click(cid, cname))
+        else:
+            ultimo = data[-1]
+            carpeta_id, carpeta_nombre, carpeta_color, carpeta_marcador = ultimo
+            frameContenedor = customtkinter.CTkFrame(SegundoFrame, bg_color="white", fg_color=carpeta_color, border_width=2)
+            frameContenedor.pack(fill="x", pady=5, padx= 60)
+
+            labelName = Label(
+                frameContenedor, 
+                text=carpeta_nombre, 
+                bg=carpeta_color, 
+                fg="white", 
+                font=("Arial", 12, "bold")
+            )
+
+            labelName.pack()
+
+            frameContenedor.bind("<Button-1>", lambda e, cid=ultimo[0], cname=ultimo[1]: on_carpeta_click(cid, cname))
+            labelName.bind("<Button-1>", lambda e, cid=ultimo[0], cname=ultimo[1]: on_carpeta_click(cid, cname))
+
+        n = 1
+
+
+    def CrearCarpeta(nombre, cCarpeta, cMarcador):
+        conexion = DataBase()
+        conexion.CrearCarpeta(nombre, cCarpeta, cMarcador)
         data = conexion.ObtenerCarpetas()
         print(data)
         conexion.Cerrar()
 
     def NombreCarpeta():
-        win = Toplevel()
-        win.geometry("300x200")
+        global colorMarcador
+        global colorCarpeta
+        
+        colorMarcador = tColor2
+        colorCarpeta = tColor1
 
-        labelInfo = Label(win, text="Añade un nombre a la carpeta")
-        labelInfo.pack()
-        entryNombre = customtkinter.CTkEntry(win, corner_radius=25, width=200)
-        entryNombre.pack()
-        btnConfirmar = customtkinter.CTkButton(win, corner_radius=25, text="Crear", command=lambda: (CrearCarpeta(entryNombre.get()), win.destroy()))
-        btnConfirmar.pack()
+        def ColorMarcador(num):
+            global colorMarcador
+            
+            frameImagen.config(background=Colores[num])
+            colorMarcador = Colores[num]
+
+        def ColorCarpeta(num):
+            global colorCarpeta
+
+            frameCarpeta.config(background=Colores[num])
+            colorCarpeta = Colores[num]
+
+        win = Toplevel()
+        win.resizable(False,False)
+        fnt = ("Arial", 10, "bold")
+
+        labelInfo = Label(win, text="Añade un nombre a la carpeta", font=fnt)
+        labelInfo.pack(pady=5)
+        entryNombre = customtkinter.CTkEntry(win, corner_radius=10, width=200)
+        entryNombre.pack(pady=5)
+
+        labelInfo2 = Label(win, text="Imagen/Marcador seleccionado:", font= fnt)
+        labelInfo2.pack(pady=5)
+        frameImagen = Frame(win, background=tColor2, width=100, height=20)
+        frameImagen.pack(pady=5)
+
+        labelInfo3 = Label(win, text="Color de la carpeta seleccionado:", font=fnt)
+        labelInfo3.pack(pady=5)
+        frameCarpeta = Frame(win, background=tColor1, width=100, height=20)
+        frameCarpeta.pack(pady=5)
+
+        labelInfo4 = Label(win, text="Color del marcador", font=fnt)
+        labelInfo4.pack(pady=5)
+        frameColorM = Frame(win)
+        frameColorM.pack(pady=5)
+        btnColor1_M = Button(frameColorM, width=5, height=2, background=Colores[0], command=lambda: ColorMarcador(0))
+        btnColor1_M.grid(column=0, row=0, padx=5)
+        btnColor2_M = Button(frameColorM, width=5, height=2, background=Colores[1], command=lambda: ColorMarcador(1))
+        btnColor2_M.grid(column=1, row=0, padx=5)
+        btnColor3_M = Button(frameColorM, width=5, height=2, background=Colores[2], command=lambda: ColorMarcador(2))
+        btnColor3_M.grid(column=2, row=0, padx=5)
+        btnColor4_M = Button(frameColorM, width=5, height=2, background=Colores[3], command=lambda: ColorMarcador(3))
+        btnColor4_M.grid(column=3, row=0, padx=5)
+
+        labelInfo5 = Label(win, text="Color de la carpeta", font=fnt)
+        labelInfo5.pack(pady=5)
+        frameColorC = Frame(win)
+        frameColorC.pack(pady=5)
+        btnColor1_C = Button(frameColorC, width=5, height=2, background=Colores[0], command=lambda: ColorCarpeta(0))
+        btnColor1_C.grid(column=0, row=0, padx=5)
+        btnColor2_C = Button(frameColorC, width=5, height=2, background=Colores[1], command=lambda: ColorCarpeta(1))
+        btnColor2_C.grid(column=1, row=0, padx=5)
+        btnColor3_C = Button(frameColorC, width=5, height=2, background=Colores[2], command=lambda: ColorCarpeta(2))
+        btnColor3_C.grid(column=2, row=0, padx=5)
+        btnColor4_C = Button(frameColorC, width=5, height=2, background=Colores[3], command=lambda: ColorCarpeta(3))
+        btnColor4_C.grid(column=3, row=0, padx=5)
+
+        frameBotones = Frame(win)
+        frameBotones.pack(pady=5)
+
+        btnImage = customtkinter.CTkButton(frameBotones, text="", corner_radius=5, width=50, height=50)
+        btnImage.grid(column=0, row=0, padx=(10,0), pady=(0,10))
+        btnConfirmar = customtkinter.CTkButton(
+            frameBotones, 
+            corner_radius=5, 
+            text="Crear", 
+            height=50,
+            width=200, 
+            command=lambda: (CrearCarpeta(entryNombre.get(), colorCarpeta, colorMarcador), ActualizarUI(), win.destroy()),
+            font=("Arial", 16, "bold")
+        )
+        btnConfirmar.grid(column=1, row=0, padx=10, pady=(0,10))
 
     def on_carpeta_click(carpeta_id, carpeta_nombre):
         global idTabla
@@ -539,7 +675,7 @@ def ventanaCarpetas():
 
     frametop = Frame(main)
     frametop.pack(fill="both", expand=True)
-    framebot = Frame(main, bg="gray")
+    framebot = Frame(main, bg=tColor1)
     framebot.pack(side="bottom", fill="x")
     framebot.columnconfigure(0, weight=1)
     framebot.columnconfigure(1, weight=1)
@@ -547,19 +683,19 @@ def ventanaCarpetas():
 
     #configuracion del frame inferior----------------------------------
     
-    btnCrear = customtkinter.CTkButton(framebot, text="Crear carpeta", corner_radius=25, command=lambda: NombreCarpeta())
+    btnCrear = customtkinter.CTkButton(framebot, text="Crear carpeta", corner_radius=10, command=lambda: NombreCarpeta(), fg_color=tColor2, height=50)
     btnCrear.grid(column=1, row=0, padx= 10, pady=(10,15))
 
-    btnImportar = customtkinter.CTkButton(framebot, text="importar carpeta", corner_radius=25)
+    btnImportar = customtkinter.CTkButton(framebot, text="importar carpeta", corner_radius=10, fg_color= tColor2, height=50)
     btnImportar.grid(column=0, row=0)
 
-    btnEliminar = customtkinter.CTkButton(framebot, text="Eliminar carpeta", corner_radius=25)
+    btnEliminar = customtkinter.CTkButton(framebot, text="Eliminar carpeta", corner_radius=10, fg_color=tColor2, height=50)
     btnEliminar.grid(column=2, row=0)
 
     #configuracion del frame superior-------------------------------------
 
     canvas = Canvas(frametop, background="white")
-    canvas.pack(side=LEFT, fill="both", expand=True)  # Hace que el canvas llene todo el frametop.
+    canvas.pack(side=LEFT, fill="both", expand=True, padx=(15,0))  # Hace que el canvas llene todo el frametop.
 
     MiScrollbar = Scrollbar(frametop, orient=VERTICAL, command=canvas.yview)  # Scrollbar también dentro del frametop.
     MiScrollbar.pack(side=RIGHT, fill=Y)
@@ -570,26 +706,9 @@ def ventanaCarpetas():
     SegundoFrame = Frame(canvas, background="#EAEEF1")
 
     canvas.create_window((0, 0), window=SegundoFrame, anchor="center", width=550)
-
-    for carpeta in data:
-        carpeta_id, carpeta_nombre = carpeta
-        frameContenedor = Frame(SegundoFrame, bg="red", padx=5, pady=5)
-        frameContenedor.pack(fill="x", pady=5)
-
-        labelName = Label(
-            frameContenedor, 
-            text=carpeta_nombre, 
-            bg="red", 
-            fg="white", 
-            font=("Arial", 12, "bold")
-        )
-
-        labelName.pack()
-
-        frameContenedor.bind("<Button-1>", lambda e, cid=carpeta_id, cname=carpeta_nombre: on_carpeta_click(cid, cname))
-        labelName.bind("<Button-1>", lambda e, cid=carpeta_id, cname=carpeta_nombre: on_carpeta_click(cid, cname))
-
+    
+    ActualizarUI()
 
     main.mainloop()
 
-ventanaCarpetas()
+VentanaCarpetas()

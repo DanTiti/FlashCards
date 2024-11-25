@@ -15,7 +15,9 @@ class DataBase:
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS carpetas (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nombre VARCHAR(100) NOT NULL
+                    nombre VARCHAR(100) NOT NULL,
+                    color VARCHAR(20),
+                    img VARCHAR(100)
                 );
             """)
 
@@ -23,14 +25,15 @@ class DataBase:
         except KeyError as e:
             print(f"Error al crear las tablas: {e}")
 
-    def CrearCarpeta(self, nombre):
+    def CrearCarpeta(self, nombre, colorCarpeta, colorMarcador):
         try:
             cursor = self.conector.cursor()
             # Inserta el nombre en la tabla carpetas
             cursor.execute("""
-                INSERT INTO carpetas (nombre)
-                VALUES (?);
-            """, (nombre,))
+                INSERT INTO carpetas (nombre, color, img)
+                VALUES (?, ?, ?);
+            """, (nombre, colorCarpeta, colorMarcador))
+            
             id = cursor.lastrowid  # Obtén el ID de la última carpeta creada
 
             # Crea una tabla asociada para la nueva carpeta
